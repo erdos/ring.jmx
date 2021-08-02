@@ -67,8 +67,8 @@
                            (as-> m
                                (try
                                  (if (.isReadable a)
-                                   (assoc m :value
-                                          (val->str (.getAttribute conn (:object active-name) (.getName a))))
+                                   (let [value (.getAttribute conn (:object active-name) (.getName a))]
+                                     (assoc m :value value))
                                    m)
                                  (catch RuntimeException e
                                    (println :! e)

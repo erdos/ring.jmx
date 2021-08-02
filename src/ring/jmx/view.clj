@@ -65,9 +65,29 @@
 
 (defmethod render-value "boolean" [{:keys [value writable]}]
   (assert (boolean? writable))
-  [:input {:type "checkbox" :disabled (not writable) :checked value}]
+  [:input {:type "checkbox" :disabled (not writable) :checked value}])
 
+(defmethod render-value "javax.management.openmbean.CompositeDataSupport"
+  [{:keys [value]}]
+  [:b "!!!" (pr-str value)]
+  [:ol
+   (for [v (.values value)]
+     [:li (render-value {:value v :type (.getName (class v))})]
+     )]
   )
+
+(defmethod render-value "javax.management.openmbean.TabularData"
+  [{:keys [value]}]
+  [:table
+   [:tr [:th "Key"] [:th "Value"]]
+   (for [k (.keySet value)]
+     [:tr
+      [:td (str k)]
+      [:td
+       (let [x (.get value (into-array k))
+             c (.getName (class x))]
+         (render-value {:value x :type c}))
+       ]])])
 
 (defn- attributes-table [attributes]
   [:table
@@ -84,12 +104,16 @@
    "td {background:#eee; padding: 4px}"
    "th {text-align: left; background: #ddd; padding: 4px}"
    "nav {background: darkmagenta; padding: 1em}"
-   "footer {background: #ddd; padding:1em; }"
+   "footer {background: #ddd; padding:1em; min-height: 50px}"
    "nav > select {margin: 4px}"
    "main {padding:1em}"
    "body {padding:0;margin:0}"
    "article > button {display: none}"
    "article:hover > button {display: block}"
+
+   "body{height:100vh}"
+   "body{display:flex; flex-direction:column;}"
+   "footer{margin-top:auto;}"
    ])
 
 (defn- view-operation [m]
