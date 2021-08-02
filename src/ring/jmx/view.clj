@@ -1,4 +1,5 @@
-(ns ring.jmx.view)
+(ns ring.jmx.view
+  (:require [ring.jmx.type :refer [type-str]]))
 
 (defn- hiccup-visitor [tree]
   (cond
@@ -10,9 +11,10 @@
     (vector? tree)
     (let [tag (first tree)
           opts (if (map? (second tree)) (second tree) {})
-          opts-str  (some->> (for [[k v] opts] (if (= k :selected)
-                                                 "selected"
-                                                 (str (name k) "=" \" v \")))
+          opts-str  (some->> (for [[k v] opts]
+                               (if (#{:selected :readonly :checked :disabled} k)
+                                 (when v (name k))
+                                 (str (name k) "=" \" v \")))
                              (not-empty)
                              (clojure.string/join " " )
                              (str " "))
@@ -34,36 +36,38 @@
 
 (defn- header [model]
   [:header
-   [:nav {:style "background: darkmagenta; padding: 1em"}
+   [:nav
     [:select {:onchange "javasctipt: document.location=this.value"}
      (for [{:keys [domain uri selected]} (:all-domains model)]
        [:option (cond-> {:value uri}
                   selected (assoc :selected ""))
         (str domain)])]
     ;; select name under domain
-    (when-let [names (:domain-names model)]
-      [:select {:onchange "javasctipt: document.location=this.value"}
-       (for [name names]
-         [:option
-          (cond-> {:value (:uri name)}
-            (:selected name) (assoc :selected ""))
-          ;; ???
-          (:canonicalKeyPropertyListString name)])])
-    [:noscript ;; so that it can be fetched with wget --recursive
-     [:ul
-      (for [{:keys [domain uri selected]} (:all-domains model)]
-        [:li [:a {:href uri} (str domain)]]
-        )]]]])
+    (when (some :selected (:domain-names model))
+      (when-let [names (:domain-names model)]
+        [:select {:onchange "javasctipt: document.location=this.value"}
+         (for [name names]
+           [:option
+            (cond-> {:value (:uri name)}
+              (:selected name) (assoc :selected ""))
+            ;; ???
+            (:canonicalKeyPropertyListString name)])]))]])
 
 (defmulti render-value :type)
 
 (defmethod render-value :default [{:keys [type value]}]
   [:pre (str value)])
 
-(doseq [type ["long" "int" "boolean" "float" "double" "byte" "short"]]
+(doseq [type ["long" "int" "float" "double" "byte" "short"]]
   (defmethod render-value type [{:keys [value]}]
     [:pre [:i value]]
     ))
+
+(defmethod render-value "boolean" [{:keys [value writable]}]
+  (assert (boolean? writable))
+  [:input {:type "checkbox" :disabled (not writable) :checked value}]
+
+  )
 
 (defn- attributes-table [attributes]
   [:table
@@ -72,22 +76,71 @@
     (for [attribute attributes]
       [:tr
        [:td (:name attribute)]
-       [:td (-> (str (:type attribute))
-                (.replace "javax.management.openmbean." "")
-                (.replace "java.lang." "")
-                (.replace "javax.management." "")
-                )]
+       [:td (type-str (str (:type attribute)))]
        [:td (render-value attribute)]])]])
 
+(def style
+  [:style
+   "td {background:#eee; padding: 4px}"
+   "th {text-align: left; background: #ddd; padding: 4px}"
+   "nav {background: darkmagenta; padding: 1em}"
+   "footer {background: #ddd; padding:1em; }"
+   "nav > select {margin: 4px}"
+   "main {padding:1em}"
+   "body {padding:0;margin:0}"
+   "article > button {display: none}"
+   "article:hover > button {display: block}"
+   ])
+
+(defn- view-operation [m]
+  [:article
+   [:b (type-str (:returnType m))]
+   [:b (:name m)]
+
+   [:pre (pr-str m)]
+   (when (not= (:description m) (:name m))
+     [:p (:description m)])
+   [:div]
+   [:button "Execute"]
+   ])
+
+(defn- page-operations [model]
+  (when-let [operations (not-empty (:operations model))]
+    [:section
+     [:h3 "Operations"]
+     (for [m operations]
+       (view-operation m))]))
+
+(defn- page-attributes [model]
+  (when-let [attributes (not-empty (:attributes model))]
+    [:section
+     [:h3 "Attributes"]
+     (attributes-table attributes)]))
+
+(defmacro ^:private get-version []
+  (System/getProperty "ring-jmx.version"))
+
+(defn page-footer []
+  [:footer
+   [:p "ring.jmx version " [:span (get-version)]]]
+  )
+
 (defn page [model]
-  [:body {:style "padding: 0; margin: 0"}
-   [:style
-    "td {background:#eee; padding: 4px}"
-    "th {text-align: left; background: #ddd; padding: 4px}"
-    "nav > select {margin: 4px}"]
+  [:head
+   ; [:meta {:charset "UTF-8"}]
+   ]
+  [:body
+   style
    (header model)
-   [:div {:style "padding: 1em"}
-    (when-let [attributes (not-empty (:attributes model))]
-      [:div
-       [:h3 "Attributes"]
-       (attributes-table attributes)])]])
+   [:main
+    (when (and (:active-domain model) (not (:active-name model)))
+      [:section
+       [:h3 "Domain " (:active-domain model)]
+       [:ul
+        (for [name (:domain-names model)]
+          [:li [:a {:href (:uri name)} (:canonicalName name)]])]])
+
+    (page-attributes model)
+    (page-operations model)]
+   (page-footer)
+   ])

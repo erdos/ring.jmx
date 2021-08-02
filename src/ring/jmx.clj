@@ -53,6 +53,12 @@
      :active-domain active-domain
      :active-name   active-name
      :mbean-info    mbean-info
+     :operations    (doall
+                     (for [m (some-> mbean-info .getOperations)]
+                       (-> (bean m)
+                           (update :descriptor bean)
+                           (update :signature (partial mapv bean))
+                           )))
      :attributes    (doall
                      (for [a (some-> mbean-info .getAttributes)]
                        (-> (bean a)
@@ -72,7 +78,8 @@
                                           :exception e
                                           :supported false))))
                            )))
-     :domain-names  (doall
+     :domain-names  (sort-by
+                     :canonicalName
                      (for [name all-names
                            :when (= active-domain (:domain name))
                            :let [uri (str (:prefix options)
@@ -88,8 +95,8 @@
          active-name]
         (map url-decode (.split (.substring (:uri request) (count (:prefix options))) "/"))]
     (assoc request
-           :active-name active-name
-           :active-domain active-domain)))
+           :active-name (not-empty active-name)
+           :active-domain (not-empty active-domain))))
 
 (defn- handle-jmx [options request]
   (let [request (request-enrich options request)
