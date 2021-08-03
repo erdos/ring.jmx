@@ -109,7 +109,7 @@
   {;; uri prefix for jmx ui page
    :prefix "/jmx/"
    ;; an extra predicate to check if the request can be processed. you can add access control here.
-   :guard  (fn [request] true)
+   :guard  (constantly true)
    })
 
 (defn wrap-jmx
@@ -118,6 +118,8 @@
    (wrap-jmx handler {}))
   ([handler options]
    (let [options (merge default-options options)]
+     (assert (.startsWith (str (:prefix options)) "/"))
+     (assert (fn? (:guard options)))
      (fn
        ([request]
         (if (handles? options request)
