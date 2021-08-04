@@ -12,3 +12,16 @@
         (.replace "javax.management.openmbean." "")
         (.replace "java.lang." "")
         (.replace "javax.management." ""))))
+
+(defmulti form-input :type)
+
+(doseq [type ["long" "java.lang.String" "float" "double" "int" "byte" "short" "char" "boolean"]]
+  (defmethod form-input type [{:keys [name defaultValue]}]
+    [:input {:type "text" :name name :value (str defaultValue)}]))
+
+
+
+(defmethod form-input :default [_]
+  [:pre "Cannot input."])
+
+; (defn form-input [{:keys [type name]}])

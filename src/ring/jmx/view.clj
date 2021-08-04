@@ -1,5 +1,5 @@
 (ns ring.jmx.view
-  (:require [ring.jmx.type :refer [type-str]]))
+  (:require [ring.jmx.type :refer [type-str form-input]]))
 
 (defn- hiccup-visitor [tree]
   (cond
@@ -104,6 +104,8 @@
    "td {background:#eee; padding: 4px}"
    "th {text-align: left; background: #ddd; padding: 4px}"
    "nav {background: darkmagenta; padding: 1em}"
+   "nav { background: linear-gradient(to top, #f953c6, darkmagenta); }"
+
    "footer {background: #ddd; padding:1em; min-height: 50px}"
    "nav > select {margin: 4px}"
    "main {padding:1em}"
@@ -125,6 +127,15 @@
    (when (not= (:description m) (:name m))
      [:p (:description m)])
    [:div]
+   [:table
+
+    (for [p (:signature m)]
+      [:tr
+       [:td (type-str (:type p))]
+       [:td (:name p)]
+       [:td (form-input p)]
+
+       ])]
    [:button "Execute"]
    ])
 
