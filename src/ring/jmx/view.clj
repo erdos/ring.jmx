@@ -1,5 +1,6 @@
 (ns ring.jmx.view
-  (:require [ring.jmx.type :refer [type-str form-input]]))
+  (:require [clojure.string]
+            [ring.jmx.type :refer [type-str form-input render-value]]))
 
 (defn- hiccup-visitor [tree]
   (cond
@@ -53,41 +54,6 @@
             ;; ???
             (:canonicalKeyPropertyListString name)])]))]])
 
-(defmulti render-value :type)
-
-(defmethod render-value :default [{:keys [type value]}]
-  [:pre (str value)])
-
-(doseq [type ["long" "int" "float" "double" "byte" "short"]]
-  (defmethod render-value type [{:keys [value]}]
-    [:pre [:i value]]
-    ))
-
-(defmethod render-value "boolean" [{:keys [value writable]}]
-  (assert (boolean? writable))
-  [:input {:type "checkbox" :disabled (not writable) :checked value}])
-
-(defmethod render-value "javax.management.openmbean.CompositeDataSupport"
-  [{:keys [value]}]
-  [:b "!!!" (pr-str value)]
-  [:ol
-   (for [v (.values value)]
-     [:li (render-value {:value v :type (.getName (class v))})]
-     )]
-  )
-
-(defmethod render-value "javax.management.openmbean.TabularData"
-  [{:keys [value]}]
-  [:table
-   [:tr [:th "Key"] [:th "Value"]]
-   (for [k (.keySet value)]
-     [:tr
-      [:td (str k)]
-      [:td
-       (let [x (.get value (into-array k))
-             c (.getName (class x))]
-         (render-value {:value x :type c}))
-       ]])])
 
 (defn- attributes-table [attributes]
   [:table
@@ -127,17 +93,16 @@
    (when (not= (:description m) (:name m))
      [:p (:description m)])
    [:div]
-   [:table
-
-    (for [p (:signature m)]
-      [:tr
-       [:td (type-str (:type p))]
-       [:td (:name p)]
-       [:td (form-input p)]
-
-       ])]
-   [:button "Execute"]
-   ])
+   [:form
+    (when (not-empty (:signature m))
+      [:table
+       (for [p (:signature m)]
+         [:tr
+          [:td (type-str (:type p))]
+          [:td (:name p)]
+          [:td (form-input p)]])])
+    [:input {:type "hidden" :name "action" :value (str (:name m))}]
+    [:input {:type "submit" :value "Execute" :method "POST"}]]])
 
 (defn- page-operations [model]
   (when-let [operations (not-empty (:operations model))]

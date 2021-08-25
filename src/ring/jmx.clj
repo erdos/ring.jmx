@@ -1,5 +1,6 @@
 (ns ring.jmx
-  (:require [ring.jmx.view :as view]))
+  (:require [clojure.string]
+            [ring.jmx.view :as view]))
 
 
 (defn- handles? [options request]
@@ -112,6 +113,18 @@
    :guard  (constantly true)
    })
 
+(defn- wrap-async-handler [options handles? handler]
+  (fn
+    ([request]
+     (if (handles? options request)
+       (handle-jmx options request)
+       (handler request)))
+    ([request respond raise]
+     (if (handles? options request)
+       (try (respond (handle-jmx options request))
+            (catch Exception e (raise e)))
+       (handler respond raise)))))
+
 (defn wrap-jmx
   "Adds a page to the handler for displaying information on JMX endpoints."
   ([handler]
@@ -120,13 +133,4 @@
    (let [options (merge default-options options)]
      (assert (.startsWith (str (:prefix options)) "/"))
      (assert (fn? (:guard options)))
-     (fn
-       ([request]
-        (if (handles? options request)
-          (handle-jmx options request)
-          (handler request)))
-       ([request respond raise]
-        (if (handles? options request)
-          (try (respond (handle-jmx options request))
-               (catch Exception e (raise e)))
-          (handler respond raise)))))))
+     (wrap-async-handler options handles?  handler))))
