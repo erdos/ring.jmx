@@ -1,5 +1,6 @@
 (ns ring.jmx
   (:require [clojure.string]
+            [ring.middleware.params :as ring-params]
             [ring.jmx.view :as view]))
 
 
@@ -43,7 +44,20 @@
         active-name (first (for [name all-names
                                  :when (= (:domain name) active-domain)
                                  :when (= (:canonicalKeyPropertyListString name) active-name)] name))
-        mbean-info (some->> active-name :object (.getMBeanInfo conn))]
+        
+        mbean-info (some->> active-name :object (.getMBeanInfo conn))
+        operations (doall (for [m (some-> mbean-info .getOperations)]
+                            (-> (bean m)
+                                (assoc :object m)
+                                (update :descriptor bean)
+                                (update :signature (partial mapv bean))
+                                (assoc  :active? (= (.getName m) (get-in request [:query-params "action"]))))))
+        active-op (first (for [op operations :when (:active? op)]
+                           (-> op
+                               (assoc :call-result (.invoke conn (:object active-name) (:name op)
+                                                       (into-array Object (map (comp (:form-params request) :name) (:signature op))) (into-array String (map :type (:signature op))))))))
+        
+        ]
     {:all-names   all-names
      :all-domains (doall
                    (for [domain (sort (set (keep :domain all-names)))
@@ -54,31 +68,26 @@
      :active-domain active-domain
      :active-name   active-name
      :mbean-info    mbean-info
-     :operations    (doall
-                     (for [m (some-> mbean-info .getOperations)]
-                       (-> (bean m)
-                           (update :descriptor bean)
-                           (update :signature (partial mapv bean))
-                           )))
+     :operations    (for [op operations] (if (:active? op) active-op op))
+     :active-operation active-op
      :attributes    (doall
                      (for [a (some-> mbean-info .getAttributes)]
                        (-> (bean a)
                            (update :descriptor bean)
                            (assoc :object a)
                            (as-> m
-                               (try
-                                 (if (.isReadable a)
-                                   (let [value (.getAttribute conn (:object active-name) (.getName a))]
-                                     (assoc m :value value))
-                                   m)
-                                 (catch RuntimeException e
-                                   (println :! e)
-                                        (assoc m :exception e))
-                                 (catch UnsupportedOperationException e
-                                   (assoc m
-                                          :exception e
-                                          :supported false))))
-                           )))
+                                 (try
+                                   (if (.isReadable a)
+                                     (let [value (.getAttribute conn (:object active-name) (.getName a))]
+                                       (assoc m :value value))
+                                     m)
+                                   (catch RuntimeException e
+                                     (println :! e)
+                                     (assoc m :exception e))
+                                   (catch UnsupportedOperationException e
+                                     (assoc m
+                                            :exception e
+                                            :supported false)))))))
      :domain-names  (sort-by
                      :canonicalName
                      (for [name all-names
@@ -88,8 +97,7 @@
                                           "/" (url-encode (:canonicalKeyPropertyListString name)))]]
                        (assoc name
                               :uri uri
-                              :selected (= active-name name))))
-     }))
+                              :selected (= active-name name))))}))
 
 (defn- request-enrich [options request]
   (let [[active-domain
@@ -99,12 +107,32 @@
            :active-name (not-empty active-name)
            :active-domain (not-empty active-domain))))
 
+
+(defn evaled-model [model request]
+  (println :? (pr-str request))
+  (if (= :post (:request-method request))
+    (do (println "Executed!")
+        (println (:active-name model))
+        ;; 1. deserialize parameters as objects of correct type
+        ;; 1.B. if cannot parse -> return parse errors.
+        ;; 2. call expression
+        ;; 3. put result into model
+        ;; 4. write ui to show evaluation result.
+        model)
+    model))
+
+
 (defn- handle-jmx [options request]
-  (let [request (request-enrich options request)
-        model   (request->model options request)]
+  (assert (map? request))
+  (let [request (ring-params/assoc-form-params request "UTF-8")
+        request (ring-params/assoc-query-params request "UTF-8")
+        request (request-enrich options request)
+        _       (assert (map? request))
+        model   (-> (request->model options request) (evaled-model request))]
     {:body    (view/hiccup-str (view/page model))
      :headers {"content-type" "text/html"}
      :status  200}))
+
 
 (def default-options
   {;; uri prefix for jmx ui page
@@ -133,4 +161,4 @@
    (let [options (merge default-options options)]
      (assert (.startsWith (str (:prefix options)) "/"))
      (assert (fn? (:guard options)))
-     (wrap-async-handler options handles?  handler))))
+     (wrap-async-handler options handles? handler))))

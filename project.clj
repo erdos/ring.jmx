@@ -5,5 +5,6 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.1"]]
   :profiles {:test {:plugins [[lein-ring "0.12.5"]]
+                    :dependencies [[org.clojure/java.jmx "1.0.0"]]
                     :ring {:handler ring.jmx-test/app}}}
   :repl-options {:init-ns ring.jmx})

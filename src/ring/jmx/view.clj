@@ -78,6 +78,7 @@
    "body {padding:0;margin:0}"
    "article > button {display: none}"
    "article:hover > button {display: block}"
+   "article.active {background: #fea}"
 
    "body{height:100vh}"
    "body{display:flex; flex-direction:column;}"
@@ -85,7 +86,7 @@
    ])
 
 (defn- view-operation [m]
-  [:article
+  [:article (when (:active? m) {:class "active"})
    [:b (type-str (:returnType m))]
    [:b (:name m)]
 
@@ -93,7 +94,7 @@
    (when (not= (:description m) (:name m))
      [:p (:description m)])
    [:div]
-   [:form
+   [:form {:method "post" :action (str "?action=" (:name m))}
     (when (not-empty (:signature m))
       [:table
        (for [p (:signature m)]
@@ -101,8 +102,11 @@
           [:td (type-str (:type p))]
           [:td (:name p)]
           [:td (form-input p)]])])
-    [:input {:type "hidden" :name "action" :value (str (:name m))}]
-    [:input {:type "submit" :value "Execute" :method "POST"}]]])
+    [:input {:type "submit" :value "Execute" :method "POST"}]]
+   (when (:active? m)
+     [:div
+      [:pre (str (:call-result m))]])
+   ])
 
 (defn- page-operations [model]
   (when-let [operations (not-empty (:operations model))]
