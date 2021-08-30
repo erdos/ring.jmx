@@ -13,13 +13,12 @@
         (.replace "java.lang." "")
         (.replace "javax.management." ""))))
 
+;; renders a html form for the given type
 (defmulti form-input :type)
 
 (doseq [type ["long" "java.lang.String" "float" "double" "int" "byte" "short" "char" "boolean"]]
   (defmethod form-input type [{:keys [name defaultValue]}]
-    [:input {:type "text" :name name :value (str defaultValue)}]))
-
-
+    [:input {:type "text" :name name :value (str defaultValue)}]))s
 
 (defmethod form-input :default [_]
   [:pre "Cannot input."])
@@ -57,3 +56,24 @@
        (let [x (.get value (into-array k))
              c (.getName (class x))]
          (render-value {:value x :type c}))]])])
+
+(defmulti parse-value :type)
+
+(defmethod parse-value "boolean" [{:keys [value]}]
+  (case value
+    ("true" "True" "TRUE") true
+    ("false" "False" "FALSE") false))
+
+(defmethod parse-value "long" [{:keys [value]}]
+  (Long/parseLong ^String value))
+
+(defmethod parse-value "int" [{:keys [value]}]
+  (Integer/parseInt ^String value))
+
+(defmethod parse-value "java.lang.String" [{:keys [value]}] value)
+(defmethod parse-value "java.lang.CharSequence" [{:keys [value]}] value)
+
+;; TODO: other mappings as well
+;; TODO: enums should use Enum.valueOf for quick lookup
+
+

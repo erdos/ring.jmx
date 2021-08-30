@@ -1,6 +1,7 @@
 (ns ring.jmx
   (:require [clojure.string]
             [ring.middleware.params :as ring-params]
+            [ring.jmx.type :as type]
             [ring.jmx.view :as view]))
 
 
@@ -36,6 +37,17 @@
         (map? val)      (clojure.string/join "\n" (for [[k v] val] (str k ": " v)))
         :else                   (str val)))
 
+(defn- invoke-model [conn op active-name form-params]
+  (assert conn)
+  (assert (:name op))
+  (assert (:object active-name))
+  (let [param-types (into-array String (map :type (:signature op)))
+        param-values (->> (map (comp form-params :name) (:signature op))
+                          (map (fn [type value] (type/parse-value {:type type :value value})) param-types)
+                          (into-array Object))]
+    (try {:call-result (.invoke conn (:object active-name) (:name op) param-values param-types)}
+         (catch Exception e {:call-error e}))))
+
 (defn request->model [options request]
   (let [conn      (get-connector options)
         all-names (map (fn [x] (assoc (bean x) :object x))
@@ -44,7 +56,7 @@
         active-name (first (for [name all-names
                                  :when (= (:domain name) active-domain)
                                  :when (= (:canonicalKeyPropertyListString name) active-name)] name))
-        
+
         mbean-info (some->> active-name :object (.getMBeanInfo conn))
         operations (doall (for [m (some-> mbean-info .getOperations)]
                             (-> (bean m)
@@ -53,11 +65,7 @@
                                 (update :signature (partial mapv bean))
                                 (assoc  :active? (= (.getName m) (get-in request [:query-params "action"]))))))
         active-op (first (for [op operations :when (:active? op)]
-                           (-> op
-                               (assoc :call-result (.invoke conn (:object active-name) (:name op)
-                                                       (into-array Object (map (comp (:form-params request) :name) (:signature op))) (into-array String (map :type (:signature op))))))))
-        
-        ]
+                           (merge op (invoke-model conn op active-name (:form-params request)))))]
     {:all-names   all-names
      :all-domains (doall
                    (for [domain (sort (set (keep :domain all-names)))
