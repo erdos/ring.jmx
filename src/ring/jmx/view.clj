@@ -38,7 +38,7 @@
 (defn- header [model]
   [:header
    [:nav
-    [:select {:onchange "javasctipt: document.location=this.value"}
+    [:select {:id "domain" :onchange "javasctipt: document.location=this.value"}
      (for [{:keys [domain uri selected]} (:all-domains model)]
        [:option (cond-> {:value uri}
                   selected (assoc :selected ""))
