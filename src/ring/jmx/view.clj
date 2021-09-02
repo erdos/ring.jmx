@@ -139,9 +139,9 @@
    style
    (header model)
    [:main
-    (when (and (:active-domain model) (not (:active-name model)))
+    (when (and (:selected-domain model) (not (:selected-name model)))
       [:section
-       [:h3 "Domain " (:active-domain model)]
+       [:h3 "Domain " (:selected-domain model)]
        [:ul
         (for [name (:domain-names model)]
           [:li [:a {:href (:uri name)} (:canonical-name name)]])]])
