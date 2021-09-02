@@ -10,8 +10,8 @@
 
 (defn default-handler [request]
   {:status 200
-   :body "asdf"
-   :headers {"content-type" "text/plain"}}
+   :body "<a href=\"/jmx/\">Go to the JMX UI!</a>"
+   :headers {"content-type" "text/html"}}
   )
 
 
