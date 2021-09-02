@@ -1,4 +1,5 @@
-(ns ring.jmx.model)
+(ns ring.jmx.model
+  (:require [clojure.set :refer [rename-keys]]))
 
 (defn jmx-url [options]
   (when-let [options (:jmx-url options)]
@@ -14,3 +15,11 @@
      (javax.management.remote.JMXServiceURL. url)
      {})
     (java.lang.management.ManagementFactory/getPlatformMBeanServer)))
+
+(defn normal-keys [m]
+  (rename-keys m {:canonicalKeyPropertyListString :canonical-key-property-list-string
+                  :canonicalName :canonical-name}))
+
+(defn get-all-names [conn]
+  (for [x (.queryNames conn (javax.management.ObjectName. "*:*") nil)]
+    (-> (bean x) (normal-keys) (assoc :object x))))
