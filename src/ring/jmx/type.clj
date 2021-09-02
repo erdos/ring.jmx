@@ -1,4 +1,5 @@
-(ns ring.jmx.type)
+(ns ring.jmx.type
+  (:require [clojure.string]))
 
 (set! *warn-on-reflection* true)
 
@@ -79,3 +80,13 @@
 ;; TODO: enums should use Enum.valueOf for quick lookup
 
 
+
+(defn val->str [val]
+  (str val)
+  (cond (nil? val)              ""
+        (-> val class .isArray) (val->str (vec val))
+        (instance? javax.management.openmbean.CompositeData val)
+        (recur (into {} (for [k (.keySet (.getCompositeType val))]
+                          [k (.get val k)])))
+        (map? val)      (clojure.string/join "\n" (for [[k v] val] (str k ": " v)))
+        :else                   (str val)))

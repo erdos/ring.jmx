@@ -54,7 +54,7 @@
             (cond-> {:value (:uri name)}
               (:selected name) (assoc :selected ""))
             ;; ???
-            (:canonicalKeyPropertyListString name)])]))]])
+            (:canonical-key-property-list-string name)])]))]])
 
 
 (defn- attributes-table [attributes]
@@ -144,7 +144,7 @@
        [:h3 "Domain " (:active-domain model)]
        [:ul
         (for [name (:domain-names model)]
-          [:li [:a {:href (:uri name)} (:canonicalName name)]])]])
+          [:li [:a {:href (:uri name)} (:canonical-name name)]])]])
 
     (page-attributes model)
     (page-operations model)]
