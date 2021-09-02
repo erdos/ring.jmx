@@ -1,5 +1,7 @@
 (ns ring.jmx.type)
 
+(set! *warn-on-reflection* true)
+
 (defn type-str [^String type]
   (cond
     (.startsWith type "[L")

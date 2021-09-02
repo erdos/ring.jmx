@@ -2,6 +2,8 @@
   (:require [clojure.string]
             [ring.jmx.type :refer [type-str form-input render-value]]))
 
+(set! *warn-on-reflection* true)
+
 (defn- hiccup-visitor [tree]
   (cond
     (string? tree) (println tree)
