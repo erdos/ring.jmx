@@ -48,6 +48,15 @@
    (for [v (.values value)]
      [:li (render-value {:value v :type (.getName (class v))})])])
 
+(defmethod render-value "javax.management.openmbean.CompositeData" [{:keys [value]}]
+  [:table (for [k (-> value .getCompositeType .keySet)
+             :let [v (.get value k)
+                   t (-> value .getCompositeType (.getType k) (.getClassName))]]
+         [:tr
+          [:td (str k)]
+          [:td [:code (type-str t)]]
+          [:td (render-value {:type (class v) :value v})]])])
+
 (defmethod render-value "javax.management.openmbean.TabularData"
   [{:keys [value]}]
   [:table
