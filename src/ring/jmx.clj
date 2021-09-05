@@ -29,9 +29,13 @@
   (assert conn)
   (assert (:name op))
   (assert (:object active-name))
+  (.println System/out (pr-str :!!! (vec (:signature op))))
   (let [param-types (into-array String (map :type (:signature op)))
         param-values (->> (map (comp form-params :name) (:signature op))
-                          (map (fn [type value] (type/parse-value {:type type :value value})) param-types)
+                          (map (fn [type value]
+                                 (.println System/out (str :> (pr-str type) (pr-str value)))
+                                 (type/parse-value {:type type :value value}))
+                               param-types)
                           (into-array Object))]
     (try {:call-result (.invoke conn (:object active-name) (:name op) param-values param-types)}
          (catch Exception e {:call-error e}))))
@@ -70,11 +74,10 @@
          :operations
          (for [op (some-> model :mbean-info .getOperations)
                :let [active? (= (.getName op) (get-in request [:query-params "action"]))
-                     bab (bean op)]]
+                     bab (update (bean op) :signature (partial mapv bean))]]
            (-> bab
-               (assoc :object op)
+               (assoc  :object op)
                (update :descriptor bean)
-               (update :signature (partial mapv bean))
                (assoc  :active? active?)
                (cond-> active? (merge (invoke-model conn bab (:active-name model) (:form-params request))))))))
 
