@@ -10,6 +10,18 @@
       (str (type-str type1) "[]")
       )
 
+    ;; https://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getName()
+    (.startsWith type "[")
+    (case type
+      "[Z" "boolean[]"
+      "[B" "byte[]"
+      "[C" "char[]"
+      "[D" "double[]"
+      "[F" "float[]"
+      "[I" "int[]"
+      "[J" "long[]"
+      "[S" "short[]")
+
     :else
     (-> type
         (.replace "javax.management.openmbean." "")
