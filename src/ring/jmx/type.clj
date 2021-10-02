@@ -40,7 +40,9 @@
 
 ; (defn form-input [{:keys [type name]}])
 
-(defmulti render-value :type)
+(defmulti render-value (fn [x] (when (some? (:value x)) (:type x))))
+
+(defmethod render-value nil [_] [:pre "nil"])
 
 (defmethod render-value :default [{:keys [type value]}]
   [:pre (str value)])
@@ -55,19 +57,22 @@
 
 (defmethod render-value "javax.management.openmbean.CompositeDataSupport"
   [{:keys [value]}]
-  [:b "!!!" (pr-str value)]
+  ; [:b "!!!" (pr-str value)]
   [:ol
    (for [v (.values value)]
      [:li (render-value {:value v :type (.getName (class v))})])])
 
 (defmethod render-value "javax.management.openmbean.CompositeData" [{:keys [value]}]
-  [:table (for [k (-> value .getCompositeType .keySet)
-             :let [v (.get value k)
-                   t (-> value .getCompositeType (.getType k) (.getClassName))]]
-         [:tr
-          [:td (str k)]
-          [:td [:code (type-str t)]]
-          [:td (render-value {:type (class v) :value v})]])])
+  [:table
+   (doall
+    (for [k (-> value .getCompositeType .keySet)
+          :let [v (.get value k)
+                t (-> value .getCompositeType (.getType k) (.getClassName))]]
+      [:tr
+       [:td (str k)]
+       [:td [:code (type-str t)]]
+       [:td (render-value {:type (type v) :value v})]]
+      ))])
 
 (defmethod render-value "javax.management.openmbean.TabularData"
   [{:keys [value]}]

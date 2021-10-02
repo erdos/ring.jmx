@@ -1,5 +1,6 @@
 (ns ring.jmx.view
   (:require [clojure.string]
+            [clojure.java.io :as io]
             [ring.jmx.type :refer [type-str form-input render-value]]))
 
 (set! *warn-on-reflection* true)
@@ -82,17 +83,18 @@
    "article:hover > button {display: block}"
    "article.active {background: #fea}"
 
+   "article.operation {border: 1px solid silver}"
+
    "body{height:100vh}"
    "body{display:flex; flex-direction:column;}"
    "footer{margin-top:auto;}"
    ])
 
 (defn- view-operation [m]
-  [:article (when (:active? m) {:class "active"})
+  [:article (if (:active? m) {:class "active operation"} {:class "operation"})
    [:b (type-str (:returnType m))]
    [:b (:name m)]
-
-   [:pre (pr-str m)]
+   ; [:pre (pr-str m)]
    (when (not= (:description m) (:name m))
      [:p (:description m)])
    [:div]
@@ -123,12 +125,13 @@
      [:h3 "Attributes"]
      (attributes-table attributes)]))
 
-(defmacro ^:private get-version []
-  (System/getProperty "ring-jmx.version"))
+(def version (or (some-> (io/resource "jmx-ui-version") slurp)
+                 (System/getProperty "ring-jmx.version")
+                 (assert false)))
 
 (defn page-footer []
   [:footer
-   [:p "ring.jmx version " [:span (get-version)]]]
+   [:p "ring.jmx version " [:span version]]]
   )
 
 (defn page [model]

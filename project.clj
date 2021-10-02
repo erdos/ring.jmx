@@ -5,6 +5,7 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [ring/ring-core "1.9.4"]]
+  :filespecs [{:type :bytes, :path "jmx-ui-version", :bytes ~(-> "project.clj" slurp read-string nnext first)}]
   :profiles {:test {:plugins [[lein-ring "0.12.5"]]
                     :dependencies [[org.clojure/java.jmx "1.0.0"]]
                     :ring {:handler ring.jmx-test/app}}}
