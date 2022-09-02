@@ -67,7 +67,7 @@
                                 :when (= (:selected-domain model) (:domain name))]
                             (assoc name
                                    :uri (make-uri options (:selected-domain model) name)
-                                   :selected (= (:selected-name model) name)))))))
+                                   :selected (= (:selected-name model) (:canonical-key-property-list-string name))))))))
 
 (defn- assoc-operations [conn request model]
   (assoc model
