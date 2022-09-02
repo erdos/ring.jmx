@@ -86,6 +86,18 @@
              c (.getName (class x))]
          (render-value {:value x :type c}))]])])
 
+(defmethod render-value "javax.management.openmbean.TabularDataSupport"
+  [{:keys [value]}]
+  [:pre (pr-str (bean value))])
+
+(defmethod render-value "[Ljava.lang.String;"
+  [{:keys [value]}]
+  [:pre (pr-str (vec value))])
+
+(defmethod render-value "[J" [{:keys [value]}] ;; long[]
+  [:pre (pr-str (vec value))])
+
+
 (defmulti parse-value :type)
 
 (defmethod parse-value "boolean" [{:keys [value]}]

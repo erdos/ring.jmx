@@ -29,7 +29,7 @@
   (assert conn)
   (assert (:name op))
   (assert (:object active-name))
-  (.println System/out (pr-str :!!! (vec (:signature op))))
+  ; (.println System/out (pr-str :!!! (vec (:signature op))))
   (let [param-types (into-array String (map :type (:signature op)))
         param-values (->> (map (comp form-params :name) (:signature op))
                           (map (fn [type value]
