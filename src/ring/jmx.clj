@@ -73,7 +73,7 @@
   (assoc model
          :operations
          (for [op (some-> model :mbean-info .getOperations)
-               :let [active? (= (.getName op) (get-in request [:query-params "action"]))
+               :let [active? (= (.getName op) (get-in request [:params "action"]))
                      bab (update (bean op) :signature (partial mapv bean))]]
            (-> bab
                (assoc  :object op)

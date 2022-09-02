@@ -68,6 +68,7 @@
        [:td (type-str (str (:type attribute)))]
        [:td (render-value attribute)]])]])
 
+
 (def style
   [:style
    "td {background:#eee; padding: 4px}"
@@ -98,7 +99,8 @@
    (when (not= (:description m) (:name m))
      [:p (:description m)])
    [:div]
-   [:form {:method "post" :action (str "?action=" (:name m))}
+   [:form {:method "post"}
+    [:input {:type "hidden" :name "action" :value (:name m)}]
     (when (not-empty (:signature m))
       [:table
        (for [p (:signature m)]
@@ -106,7 +108,7 @@
           [:td (type-str (:type p))]
           [:td (:name p)]
           [:td (form-input p)]])])
-    [:input {:type "submit" :value "Execute" :method "POST"}]]
+    [:input {:type "submit" :value "Execute"}]]
    (when (:active? m)
      [:div
       [:pre (str (:call-result m))]])

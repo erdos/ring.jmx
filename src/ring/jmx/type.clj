@@ -38,7 +38,7 @@
 (defmethod form-input :default [_]
   [:pre "Cannot input."])
 
-; (defn form-input [{:keys [type name]}])
+;; (defmethod form-input "TabularData" [{:keys [name]}])
 
 (defmulti render-value (fn [x] (when (some? (:value x)) (:type x))))
 
