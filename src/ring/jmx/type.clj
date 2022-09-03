@@ -38,8 +38,6 @@
 (defmethod form-input :default [_]
   [:pre "Cannot input."])
 
-;; (defmethod form-input "TabularData" [{:keys [name]}])
-
 (defmulti render-value (fn [x] (when (some? (:value x)) (:type x))))
 
 (defmethod render-value nil [_] [:pre "nil"])
@@ -57,7 +55,6 @@
 
 (defmethod render-value "javax.management.openmbean.CompositeDataSupport"
   [{:keys [value]}]
-  ; [:b "!!!" (pr-str value)]
   [:ol
    (for [v (.values value)]
      [:li (render-value {:value v :type (some-> v class .getName)})])])
@@ -83,7 +80,7 @@
       [:td (str k)]
       [:td
        (let [x (.get value (into-array k))
-             c (.getName (class x))]
+             c (some-> x class .getName)]
          (render-value {:value x :type c}))]])])
 
 (defmethod render-value "javax.management.openmbean.TabularDataSupport"
@@ -102,8 +99,8 @@
 
 (defmethod parse-value "boolean" [{:keys [value]}]
   (case value
-    ("true" "True" "TRUE") true
-    ("false" "False" "FALSE") false))
+    ("true" "True" "TRUE" "1") true
+    ("false" "False" "FALSE" "0") false))
 
 (defmethod parse-value "long" [{:keys [value]}]
   (Long/parseLong ^String value))

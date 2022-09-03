@@ -65,7 +65,7 @@
     (for [attribute attributes]
       [:tr
        [:td (:name attribute)]
-       [:td (type-str (str (:type attribute)))]
+       [:td [:code (type-str (str (:type attribute)))]]
        [:td (render-value attribute)]])]])
 
 
@@ -77,7 +77,7 @@
    "nav { background: linear-gradient(to top, #f953c6, darkmagenta); }"
 
    "footer {background: #ddd; padding:1em; min-height: 50px}"
-   "nav > select {margin: 4px}"
+   "nav > select {margin: 4px; font-size: 1.2em}"
    "main {padding:1em}"
    "body {padding:0;margin:0}"
    "article > button {display: none}"
@@ -85,6 +85,7 @@
    "article.active {background: #fea}"
 
    "article.operation {border: 1px solid silver; margin: 1em 0em}"
+   "input[type=submit]{margin:1em}"
 
    "body{height:100vh}"
    "body{display:flex; flex-direction:column;}"
