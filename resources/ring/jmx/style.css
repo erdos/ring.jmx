@@ -12,7 +12,7 @@ nav {background: darkmagenta; padding: 1em}
 nav { background: linear-gradient(to top, #f953c6, darkmagenta); }
 
 footer {background: #ddd; padding:1em; min-height: 50px}
-nav > select {margin: 4px; font-size: 1.2em}
+nav > select {margin: 4px; font-size: 1.2em; user-select: none}
 main {padding:1em}
 article > button {display: none}
 article:hover > button {display: block}

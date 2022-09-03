@@ -9,7 +9,7 @@
             (:port options "3000")
             (:jndi-path options "jmxrmi"))))
 
-(defn get-connector [options]
+(defn ^javax.management.MBeanServer get-connector [options]
   (if-let [url (jmx-url options)]
     (javax.management.remote.JMXConnectorFactory/connect
      (javax.management.remote.JMXServiceURL. url)
