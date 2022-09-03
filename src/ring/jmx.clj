@@ -26,21 +26,6 @@
    (assert (map? name))
    (str (:prefix options) (url-encode active-domain) "/" (url-encode (:canonical-key-property-list-string name)))))
 
-(defn- invoke-model [conn op active-name form-params]
-  (assert conn)
-  (assert (:name op))
-  (assert (:object active-name))
-  ; (.println System/out (pr-str :!!! (vec (:signature op))))
-  (let [param-types (into-array String (map :type (:signature op)))
-        param-values (->> (map (comp form-params :name) (:signature op))
-                          (map (fn [type value]
-                                 (.println System/out (str :> (pr-str type) (pr-str value)))
-                                 (type/parse-value {:type type :value value}))
-                               param-types)
-                          (into-array Object))]
-    (try {:call-result (.invoke conn (:object active-name) (:name op) param-values param-types)}
-         (catch Exception e {:call-error e}))))
-
 (defn- assoc-all-names [connection model]
   (let [all-names (model/get-all-names connection)
         active-name (first (for [name all-names
@@ -74,13 +59,10 @@
   (assoc model
          :operations
          (for [op (some-> model :mbean-info .getOperations)
-               :let [active? (= (.getName op) (get-in request [:params "action"]))
-                     bab (update (bean op) :signature (partial mapv bean))]]
+               :let [bab (update (bean op) :signature (partial mapv bean))]]
            (-> bab
                (assoc  :object op)
-               (update :descriptor bean)
-               (assoc  :active? active?)
-               (cond-> active? (merge (invoke-model conn bab (:active-name model) (:form-params request))))))))
+               (update :descriptor bean)))))
 
 (defn- assoc-attributes [conn model]
   (let [active-name (:active-name model)]
@@ -121,7 +103,6 @@
 
 ;; find action by name
 (defn handle-jmx-invoke [options request]
-  (println :>>>> (pr-str request))
   (let [request (multipart-params/multipart-params-request request "UTF-8")
         request (ring-params/assoc-query-params request "UTF-8")
         {:keys [selected-domain selected-name]} (request->selected options request)
