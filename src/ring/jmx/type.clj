@@ -60,7 +60,7 @@
   ; [:b "!!!" (pr-str value)]
   [:ol
    (for [v (.values value)]
-     [:li (render-value {:value v :type (.getName (class v))})])])
+     [:li (render-value {:value v :type (some-> v class .getName)})])])
 
 (defmethod render-value "javax.management.openmbean.CompositeData" [{:keys [value]}]
   [:table

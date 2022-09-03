@@ -89,6 +89,7 @@
    "body{height:100vh}"
    "body{display:flex; flex-direction:column;}"
    "footer{margin-top:auto;}"
+   "summary{user-select:none}"
    ])
 
 (def script
@@ -122,10 +123,6 @@
             [:b (.getName operation)]
             (when (not= (.getDescription operation) (.getName operation))
               [:p (.getDescription operation)])
-            (when call-result
-              [:pre call-result])
-            (when call-error
-              [:pre call-error])
     [:form {:method "post"}
       [:input {:type "hidden" :name "action" :value (.getName operation)}]
       (when (not-empty (.getSignature operation))
@@ -140,7 +137,16 @@
               [:td (form-input (assoc p :value (:raw p)))]]
             (when (:error p)
               [:tr [:td {:class "error" :colspan 3} [:pre (str (:error p))]]])))])
-      [:input {:type "submit" :value "Execute"}]]])
+      [:input {:type "submit" :value "Execute"}]
+      (when call-result
+        [:div
+          (if true
+            (render-value {:type (.getReturnType operation) :value call-result})
+            [:pre (pr-str call-result)])])
+      (when call-error
+        [:details {:open "open"}
+                  [:summary (str call-error)]
+                  [:pre (pr-str call-error)]])]])
 
 (defn- page-operations [model]
   (when-let [operations (not-empty (:operations model))]
