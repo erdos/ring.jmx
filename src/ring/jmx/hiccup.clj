@@ -1,5 +1,5 @@
 (ns ring.jmx.hiccup
-  "Minimalist and self-container Hiccup implementation"
+  "Minimalist and self-contained Hiccup implementation"
   (:require [clojure.string]))
 
 (set! *warn-on-reflection* true)
@@ -18,7 +18,7 @@
                                  (when v (name k))
                                  (str (name k) "=" \" v \")))
                              (not-empty)
-                             (clojure.string/join " " )
+                             (clojure.string/join " ")
                              (str " "))
           body (if (map? (second tree)) (nnext tree) (next tree))]
       (assert (keyword? tag))

@@ -11,9 +11,7 @@
 (defn default-handler [request]
   {:status 200
    :body "<a href=\"/jmx/\">Go to the JMX UI!</a>"
-   :headers {"content-type" "text/html"}}
-  )
-
+   :headers {"content-type" "text/html"}})
 
 (def -app (wrap-jmx default-handler))
 

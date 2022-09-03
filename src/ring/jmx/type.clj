@@ -7,8 +7,7 @@
   (cond
     (.startsWith type "[L")
     (let [type1 (.substring type 2 (dec (.length type)))]
-      (str (type-str type1) "[]")
-      )
+      (str (type-str type1) "[]"))
 
     ;; https://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getName()
     (.startsWith type "[")
@@ -68,8 +67,7 @@
       [:tr
        [:td (str k)]
        [:td [:code (type-str t)]]
-       [:td (render-value {:type t :value v})]]
-      ))])
+       [:td (render-value {:type t :value v})]]))])
 
 (defmethod render-value "javax.management.openmbean.TabularData"
   [{:keys [value]}]
