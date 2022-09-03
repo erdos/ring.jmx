@@ -3,11 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
       var e = article.querySelector('form');
       e.addEventListener('submit', function (event) {
         var data = this;
+        article.classList.add('active');
         fetch(window.location.href, {
           method: 'POST',
           body: new FormData(data)
         }).then(res=>res.text())
           .then(function (data) {
+            article.classList.remove('active');
             var t = document.createElement('template');
             t.innerHTML = data;
             var parent = article.parentNode;

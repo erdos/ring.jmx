@@ -70,7 +70,6 @@
 
 
 (def style [:style (slurp (clojure.java.io/resource "ring/jmx/style.css"))])
-
 (def script [:script (slurp (clojure.java.io/resource "ring/jmx/script.js"))])
 
 (defn operation-block [operation params {:keys [call-result call-error] :as executed?}]
@@ -91,14 +90,15 @@
               [:td [:code (type-str (:type p))]]
               [:td (:name p)]
               [:td (form-input (assoc p :value (:raw p)))]]
-            (when (:error p)
-              [:tr [:td {:class "error" :colspan 3} [:pre (str (:error p))]]])))])
+            (when-let [t ^Throwable (:error p)]
+              [:tr [:td {:class "error" :colspan 3}
+                [:pre [:b (.getSimpleName (class t))]]
+                [:pre (.getMessage t)]]])))])
       [:input {:type "submit" :value "Execute"}]
       (when call-result
-        [:div
-          (if true
-            (render-value {:type (.getReturnType operation) :value call-result})
-            [:pre (pr-str call-result)])])
+        [:details {:open "open"}
+          [:summary "result " (.getReturnType operation)]
+          (render-value {:type (.getReturnType operation) :value call-result})])
       (when call-error
         [:details {:open "open"}
                   [:summary (str call-error)]
