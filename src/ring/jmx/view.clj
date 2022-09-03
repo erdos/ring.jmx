@@ -147,7 +147,7 @@
     [:section
      [:h3 "Operations"]
      (for [m operations]
-       (operation-block (:object m) nil nil))]))
+       [:div (operation-block (:object m) nil nil)])]))
 
 (defn- page-attributes [model]
   (when-let [attributes (not-empty (:attributes model))]
