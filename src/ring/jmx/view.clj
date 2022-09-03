@@ -69,54 +69,9 @@
        [:td (render-value attribute)]])]])
 
 
-(def style
-  [:style
-   "td {background:#eee; padding: 4px}"
-   "th {text-align: left; background: #ddd; padding: 4px}"
-   "nav {background: darkmagenta; padding: 1em}"
-   "nav { background: linear-gradient(to top, #f953c6, darkmagenta); }"
+(def style [:style (slurp (clojure.java.io/resource "ring/jmx/style.css"))])
 
-   "footer {background: #ddd; padding:1em; min-height: 50px}"
-   "nav > select {margin: 4px; font-size: 1.2em}"
-   "main {padding:1em}"
-   "body {padding:0;margin:0}"
-   "article > button {display: none}"
-   "article:hover > button {display: block}"
-   "article.active {background: #fea}"
-
-   "article.operation {border: 1px solid silver; margin: 1em 0em}"
-   "input[type=submit]{margin:1em}"
-
-   "body{height:100vh}"
-   "body{display:flex; flex-direction:column;}"
-   "footer{margin-top:auto;}"
-   "summary{user-select:none}"
-   ])
-
-(def script
-  [:script
-  "
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('article.operation').forEach(function updateArticle(article) {
-      var e = article.querySelector('form');
-      e.addEventListener('submit', function (event) {
-        var data = this;
-        fetch(window.location.href, {
-          method: 'POST',
-          body: new FormData(data)
-        }).then(res=>res.text())
-          .then(function (data) {
-            var t = document.createElement('template');
-            t.innerHTML = data;
-            var parent = article.parentNode;
-            article.replaceWith(t.content);
-            updateArticle(parent.querySelector('article.operation'));
-        });
-        event.preventDefault();
-      });
-    });
-  });
-  "])
+(def script [:script (slurp (clojure.java.io/resource "ring/jmx/script.js"))])
 
 (defn operation-block [operation params {:keys [call-result call-error] :as executed?}]
   [:article (if executed? {:class "active operation"} {:class "operation"})

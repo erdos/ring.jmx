@@ -68,7 +68,7 @@
       [:tr
        [:td (str k)]
        [:td [:code (type-str t)]]
-       [:td (render-value {:type (type v) :value v})]]
+       [:td (render-value {:type t :value v})]]
       ))])
 
 (defmethod render-value "javax.management.openmbean.TabularData"

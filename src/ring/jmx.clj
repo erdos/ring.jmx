@@ -111,7 +111,7 @@
         model       (model/get-selected-name conn selected-domain selected-name)
         object-name (javax.management.ObjectName. (str selected-domain ":" selected-name))
         mbean-info  (.getMBeanInfo conn object-name)
-        operation   (some #(when (= (.getName %) action-name) %) (.getOperations mbean-info))
+        operation   ^javax.management.MBeanOperationInfo (some #(when (= (.getName %) action-name) %) (.getOperations mbean-info))
         _ (assert operation (str "No operation with " (:params request)))
         params (for [sig (.getSignature operation)
                      :let [typ  (.getType sig)
