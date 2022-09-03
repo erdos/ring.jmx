@@ -74,8 +74,8 @@
   (when-let [operations (not-empty (:operations model))]
     [:section
      [:h3 "Operations"]
-     (for [m operations]
-       [:div (operation-block (:object m) nil nil)])]))
+     (for [op operations]
+       [:div (operation-block op nil nil)])]))
 
 (defn- page-attributes [model]
   (when-let [attributes (not-empty (:attributes model))]

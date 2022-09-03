@@ -57,13 +57,7 @@
                                    :selected (= (:selected-name model) (:canonical-key-property-list-string name))))))))
 
 (defn- assoc-operations [conn request model]
-  (assoc model
-         :operations
-         (for [op (some-> model :mbean-info .getOperations)
-               :let [bab (update (bean op) :signature (partial mapv bean))]]
-           (-> bab
-               (assoc  :object op)
-               (update :descriptor bean)))))
+  (assoc model :operations (some-> model :mbean-info .getOperations vec)))
 
 (defn- assoc-attributes [conn model]
   (let [active-name (:active-name model)]
@@ -105,7 +99,6 @@
 ;; find action by name
 (defn handle-jmx-invoke [options request]
   (let [request (multipart-params/multipart-params-request request "UTF-8")
-        request (ring-params/assoc-query-params request "UTF-8")
         {:keys [selected-domain selected-name]} (request->selected options request)
         conn        (model/get-connector options)
         action-name (get-in request [:params "action"])
@@ -133,14 +126,12 @@
 (defn- handle-jmx [options request]
   (assert (map? request))
   (if (= :post (:request-method request))
-     (handle-jmx-invoke options request) 
-  
-  (let [request (ring-params/assoc-query-params request "UTF-8")
-        model   (request->model options request)]
-    {:body    (hiccup-str (view/page model))
-     :headers {"content-type" "text/html"}
-     :status  200}))
-)
+    (handle-jmx-invoke options request)  
+    (let [request (ring-params/assoc-query-params request "UTF-8")
+          model   (request->model options request)]
+      {:body    (hiccup-str (view/page model))
+       :headers {"content-type" "text/html"}
+       :status  200})))
 
 (def default-options
   {;; uri prefix for jmx ui page
