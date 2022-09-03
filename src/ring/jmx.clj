@@ -1,6 +1,7 @@
 (ns ring.jmx
   (:require [clojure.string]
             [ring.middleware.params :as ring-params]
+            [ring.middleware.multipart-params :as multipart-params]
             [ring.jmx.model :as model]
             [ring.jmx.type :as type]
             [ring.jmx.view :as view]))
@@ -103,26 +104,61 @@
                                    :exception e
                                    :supported false))))))))))
 
-(defn request->model [options request]
-  (let [connection (model/get-connector options)
-        [active-domain active-name]
+(defn- request->selected [options request]
+  (let [[active-domain active-name]
         (map url-decode (.split (.substring (str (:uri request)) (count (:prefix options))) "/"))]
-    (->> {:selected-name active-name
-          :selected-domain active-domain}
+    {:selected-name active-name
+     :selected-domain active-domain}))
+
+(defn request->model [options request]
+  (let [connection (model/get-connector options)]
+    (->> (request->selected options request)
          (assoc-all-names connection)
          (assoc-all-domains options)
          (assoc-operations connection request)
          (assoc-attributes connection))))
 
+
+;; find action by name
+(defn handle-jmx-invoke [options request]
+  (println :>>>> (pr-str request))
+  (let [request (multipart-params/multipart-params-request request "UTF-8")
+        request (ring-params/assoc-query-params request "UTF-8")
+        {:keys [selected-domain selected-name]} (request->selected options request)
+        conn        (model/get-connector options)
+        action-name (get-in request [:params "action"])
+        model       (model/get-selected-name conn selected-domain selected-name)
+        object-name (javax.management.ObjectName. (str selected-domain ":" selected-name))
+        mbean-info  (.getMBeanInfo conn object-name)
+        operation   (some #(when (= (.getName %) action-name) %) (.getOperations mbean-info))
+        _ (assert operation (str "No operation with " (:params request)))
+        params (for [sig (.getSignature operation)
+                     :let [typ  (.getType sig)
+                           nam  (.getName sig)
+                           raw  (get-in request [:params nam])]]
+                 (try {:type typ :raw raw :name nam :value (type/parse-value {:type typ :value raw})}
+                      (catch Exception e {:type typ :raw raw :name nam :error e})))
+        executed (when (not-any? :error params)
+                   (try {:call-result (.invoke conn object-name
+                                               (.getName operation)
+                                               (into-array Object (map :value params))
+                                               (into-array String (map :type params)))}
+                        (catch Exception e {:call-error e})))]
+    {:status (if (contains? executed :call-result) 201 500)
+     :headers {"content-type" "text/html"}
+     :body (view/hiccup-str (view/operation-block operation params executed))}))
+
 (defn- handle-jmx [options request]
   (assert (map? request))
-  (let [request (ring-params/assoc-form-params request "UTF-8")
-        request (ring-params/assoc-query-params request "UTF-8")
+  (if (= :post (:request-method request))
+     (handle-jmx-invoke options request) 
+  
+  (let [request (ring-params/assoc-query-params request "UTF-8")
         model   (request->model options request)]
     {:body    (view/hiccup-str (view/page model))
      :headers {"content-type" "text/html"}
      :status  200}))
-
+)
 
 (def default-options
   {;; uri prefix for jmx ui page

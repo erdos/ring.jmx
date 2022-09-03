@@ -23,3 +23,7 @@
 (defn get-all-names [conn]
   (for [x (.queryNames conn (javax.management.ObjectName. "*:*") nil)]
     (-> (bean x) (normal-keys) (assoc :object x))))
+
+(defn get-selected-name [conn domain name]
+  (when-let [x (first (.queryNames conn (javax.management.ObjectName. (str domain ":" name)) nil))]
+    (-> x (bean) (normal-keys) (assoc :object x))))

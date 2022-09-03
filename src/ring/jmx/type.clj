@@ -32,8 +32,8 @@
 (defmulti form-input :type)
 
 (doseq [type ["long" "java.lang.String" "float" "double" "int" "byte" "short" "char" "boolean"]]
-  (defmethod form-input type [{:keys [name defaultValue]}]
-    [:input {:type "text" :name name :value (str defaultValue)}]))
+  (defmethod form-input type [{:keys [name value]}]
+    [:input {:type "text" :name name :value (str value)}]))
 
 (defmethod form-input :default [_]
   [:pre "Cannot input."])

@@ -84,42 +84,70 @@
    "article:hover > button {display: block}"
    "article.active {background: #fea}"
 
-   "article.operation {border: 1px solid silver}"
+   "article.operation {border: 1px solid silver; margin: 1em 0em}"
 
    "body{height:100vh}"
    "body{display:flex; flex-direction:column;}"
    "footer{margin-top:auto;}"
    ])
 
-(defn- view-operation [m]
-  [:article (if (:active? m) {:class "active operation"} {:class "operation"})
-   [:b (type-str (:returnType m))]
-   [:b (:name m)]
-   ; [:pre (pr-str m)]
-   (when (not= (:description m) (:name m))
-     [:p (:description m)])
-   [:div]
-   [:form {:method "post"}
-    [:input {:type "hidden" :name "action" :value (:name m)}]
-    (when (not-empty (:signature m))
-      [:table
-       (for [p (:signature m)]
-         [:tr
-          [:td (type-str (:type p))]
-          [:td (:name p)]
-          [:td (form-input p)]])])
-    [:input {:type "submit" :value "Execute"}]]
-   (when (:active? m)
-     [:div
-      [:pre (str (:call-result m))]])
-   ])
+(def script
+  [:script
+  "
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('article.operation').forEach(function updateArticle(article) {
+      var e = article.querySelector('form');
+      e.addEventListener('submit', function (event) {
+        var data = this;
+        fetch(window.location.href, {
+          method: 'POST',
+          body: new FormData(data)
+        }).then(res=>res.text())
+          .then(function (data) {
+            var t = document.createElement('template');
+            t.innerHTML = data;
+            var parent = article.parentNode;
+            article.replaceWith(t.content);
+            updateArticle(parent.querySelector('article.operation'));
+        });
+        event.preventDefault();
+      });
+    });
+  });
+  "])
+
+(defn operation-block [operation params {:keys [call-result call-error] :as executed?}]
+  [:article (if executed? {:class "active operation"} {:class "operation"})
+            [:b (type-str (.getReturnType operation))]
+            [:b (.getName operation)]
+            (when (not= (.getDescription operation) (.getName operation))
+              [:p (.getDescription operation)])
+            (when call-result
+              [:pre call-result])
+            (when call-error
+              [:pre call-error])
+    [:form {:method "post"}
+      [:input {:type "hidden" :name "action" :value (.getName operation)}]
+      (when (not-empty (.getSignature operation))
+        [:table
+        (for [p (map (fn [p s] (assoc p :type (.getType s) :name (.getName s)))
+                     (or params (repeat {}))
+                     (.getSignature operation))]
+          (list
+            [:tr
+              [:td [:code (type-str (:type p))]]
+              [:td (:name p)]
+              [:td (form-input (assoc p :value (:raw p)))]]
+            (when (:error p)
+              [:tr [:td {:class "error" :colspan 3} [:pre (str (:error p))]]])))])
+      [:input {:type "submit" :value "Execute"}]]])
 
 (defn- page-operations [model]
   (when-let [operations (not-empty (:operations model))]
     [:section
      [:h3 "Operations"]
      (for [m operations]
-       (view-operation m))]))
+       (operation-block (:object m) nil nil))]))
 
 (defn- page-attributes [model]
   (when-let [attributes (not-empty (:attributes model))]
@@ -133,15 +161,14 @@
 
 (defn page-footer []
   [:footer
-   [:p "ring.jmx version " [:span version]]]
-  )
+   [:p "ring.jmx version " [:span version]]])
 
 (defn page [model]
   [:head
    ; [:meta {:charset "UTF-8"}]
    ]
   [:body
-   style
+   style, script
    (header model)
    [:main
     (when (and (:selected-domain model) (not (:selected-name model)))
@@ -153,5 +180,4 @@
 
     (page-attributes model)
     (page-operations model)]
-   (page-footer)
-   ])
+   (page-footer)])
