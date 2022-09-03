@@ -3,6 +3,7 @@
             [ring.middleware.params :as ring-params]
             [ring.middleware.multipart-params :as multipart-params]
             [ring.jmx.model :as model]
+            [ring.jmx.hiccup :refer [hiccup-str]]
             [ring.jmx.type :as type]
             [ring.jmx.view :as view]))
 
@@ -127,7 +128,7 @@
                         (catch Exception e {:call-error e})))]
     {:status (if (contains? executed :call-result) 201 500)
      :headers {"content-type" "text/html"}
-     :body (view/hiccup-str (view/operation-block operation params executed))}))
+     :body (hiccup-str (view/operation-block operation params executed))}))
 
 (defn- handle-jmx [options request]
   (assert (map? request))
@@ -136,7 +137,7 @@
   
   (let [request (ring-params/assoc-query-params request "UTF-8")
         model   (request->model options request)]
-    {:body    (view/hiccup-str (view/page model))
+    {:body    (hiccup-str (view/page model))
      :headers {"content-type" "text/html"}
      :status  200}))
 )
