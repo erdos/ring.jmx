@@ -61,7 +61,7 @@
   (assoc model :operations (some-> model :mbean-info .getOperations vec)))
 
 (defn- assoc-attributes [^MBeanServer conn model]
-  (when-let [active-name (:active-name model)]
+  (let [active-name (:active-name model)]
     (assoc model
            :attributes
            (doall
