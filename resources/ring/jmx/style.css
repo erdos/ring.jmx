@@ -27,3 +27,5 @@ body{height:100vh}
 body{display:flex; flex-direction:column;}
 footer{margin-top:auto;}
 summary{user-select:none}
+
+summary > h3 {display: inline-block}

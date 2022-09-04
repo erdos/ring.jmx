@@ -1,4 +1,5 @@
 (ns ring.jmx
+  (:import [javax.management MBeanAttributeInfo MBeanOperationInfo MBeanParameterInfo MBeanServer ObjectName])
   (:require [clojure.string]
             [ring.middleware.params :as ring-params]
             [ring.middleware.multipart-params :as multipart-params]
@@ -13,8 +14,8 @@
   (and (.startsWith (str (:uri request)) (str (:prefix options)))
        ((:guard options) request)))
 
-(defn- url-encode [s] (java.net.URLEncoder/encode s "UTF-8"))
-(defn- url-decode [s] (java.net.URLDecoder/decode s "UTF-8"))
+(defn- url-encode [s] (java.net.URLEncoder/encode ^String s "UTF-8"))
+(defn- url-decode [s] (java.net.URLDecoder/decode ^String s "UTF-8"))
 
 (defn- make-uri
   ([options domain]
@@ -59,12 +60,12 @@
 (defn- assoc-operations [conn request model]
   (assoc model :operations (some-> model :mbean-info .getOperations vec)))
 
-(defn- assoc-attributes [conn model]
-  (let [active-name (:active-name model)]
+(defn- assoc-attributes [^MBeanServer conn model]
+  (when-let [active-name (:active-name model)]
     (assoc model
            :attributes
            (doall
-            (for [a (some-> model :mbean-info .getAttributes)]
+            (for [^MBeanAttributeInfo a (some-> model :mbean-info .getAttributes)]
               (-> (bean a)
                   (update :descriptor bean)
                   (assoc :object a)
@@ -95,7 +96,6 @@
          (assoc-operations connection request)
          (assoc-attributes connection))))
 
-
 ;; find action by name
 (defn handle-jmx-invoke [options request]
   (let [request (multipart-params/multipart-params-request request "UTF-8")
@@ -103,11 +103,11 @@
         conn        (model/get-connector options)
         action-name (get-in request [:params "action"])
         model       (model/get-selected-name conn selected-domain selected-name)
-        object-name (javax.management.ObjectName. (str selected-domain ":" selected-name))
+        object-name (ObjectName. (str selected-domain ":" selected-name))
         mbean-info  (.getMBeanInfo conn object-name)
-        operation   ^javax.management.MBeanOperationInfo (some #(when (= (.getName %) action-name) %) (.getOperations mbean-info))
+        operation   ^MBeanOperationInfo (some #(when (= (.getName ^MBeanOperationInfo %) action-name) %) (.getOperations mbean-info))
         _ (assert operation (str "No operation with " (:params request)))
-        params (for [sig (.getSignature operation)
+        params (for [^MBeanParameterInfo sig (.getSignature operation)
                      :let [typ  (.getType sig)
                            nam  (.getName sig)
                            raw  (get-in request [:params nam])]]
