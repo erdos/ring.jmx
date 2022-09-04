@@ -80,8 +80,8 @@
 (defn- page-attributes [model]
   (when-let [attributes (not-empty (:attributes model))]
     [:section
-     [:h3 "Attributes"]
-     (attributes-table attributes)]))
+     [:details {:open "open"} [:summary [:h3 "Attributes"]]
+      (attributes-table attributes)]]))
 
 (def version (or (some-> (io/resource "jmx-ui-version") slurp)
                  (System/getProperty "ring-jmx.version")
