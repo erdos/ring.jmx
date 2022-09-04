@@ -1,10 +1,23 @@
 # ring.jmx
 
+A management UI in for [Ring](https://github.com/ring-clojure/ring) to access [Java Management Extensions](https://docs.oracle.com/javase/8/docs/api/javax/management/package-summary.html#package.description).
+
 A Clojure library designed to ... well, that part is up to you.
 
 ## Usage
 
-FIXME
+This library provides a ring handler wrapper function. 
+
+```
+(require '[ring.jmx])
+
+(defn default-handler [request]
+  {:status 200
+   :body "<a href=\"/jmx/\">Go to the JMX UI!</a>"
+   :headers {"content-type" "text/html"}})
+
+(def my-app (wrap-jmx my-handler))
+```
 
 ### Testing
 
@@ -18,7 +31,7 @@ Then open your browser at `http://localhost:3000/jmx`.
 
 ## License
 
-Copyright © 2021 FIXME
+Copyright © 2022 Janos Erdos
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
