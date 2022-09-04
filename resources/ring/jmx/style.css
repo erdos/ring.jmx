@@ -7,6 +7,8 @@ body {padding:0;margin:0}
 td {background:#eee; padding: 4px}
 td.error {background:#ebc;}
 
+td > table {background: #fff}
+
 th {text-align: left; background: #ddd; padding: 4px}
 nav {background: darkmagenta; padding: 1em}
 nav { background: linear-gradient(to top, #f953c6, darkmagenta); }

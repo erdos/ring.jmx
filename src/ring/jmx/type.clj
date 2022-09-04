@@ -48,9 +48,8 @@
   (defmethod render-value type [{:keys [value]}]
     [:pre [:i value]]))
 
-(defmethod render-value "boolean" [{:keys [value writable]}]
-  (assert (boolean? writable))
-  [:input {:type "checkbox" :disabled (not writable) :checked value}])
+(defmethod render-value "boolean" [{:keys [value]}]
+  [:input {:type "checkbox" :disabled "disabled" :checked value}])
 
 (defmethod render-value "javax.management.openmbean.CompositeDataSupport"
   [{:keys [value]}]

@@ -92,20 +92,19 @@
    [:p "ring.jmx version " [:span version]]])
 
 (defn page [model]
-  [:head
-   ; [:meta {:charset "UTF-8"}]
-   ]
-  [:body
-   style, script
-   (header model)
-   [:main
-    (when (and (:selected-domain model) (not (:selected-name model)))
-      [:section
-       [:h3 "Domain " (:selected-domain model)]
-       [:ul
-        (for [name (:domain-names model)]
-          [:li [:a {:href (:uri name)} (:canonical-name name)]])]])
+  (list [:head
+         [:meta {:charset "UTF-8"}]
+         style, script]
+        [:body
+          (header model)
+          [:main
+            (when (and (:selected-domain model) (not (:selected-name model)))
+              [:section
+              [:h3 "Domain " (:selected-domain model)]
+              [:ul
+                (for [name (:domain-names model)]
+                  [:li [:a {:href (:uri name)} (:canonical-name name)]])]])
 
-    (page-attributes model)
-    (page-operations model)]
-   (page-footer)])
+            (page-attributes model)
+            (page-operations model)]
+          (page-footer)]))
